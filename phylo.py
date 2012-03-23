@@ -94,7 +94,7 @@ def nodes_to_html(nodes):
     name_cells  = ['<td>{0}: {1}</td>'.format(capitalize(node.name), time) for node,time in zip(nodes,times)]
     return '<table border="1">\n<tr>' + '\n'.join(img_cells) + '</tr>\n<tr>' + '\n'.join(name_cells) + '</tr>\n</table>'
 
-# the arguments are the paths (or in the case of clean_name_file_path,
+# The arguments are the paths (or in the case of clean_name_file_path,
 # possibly the desired path) to names.dmp, nodes.dmp, and the clean 
 # names file respectively
 def generate_nodelist(name_file_path, node_file_path, clean_name_file_path)
