@@ -4,6 +4,31 @@ from random import random, randint
 from copy import deepcopy
 from physics import hooke, coulomb
 
+def net_bh_force(body, bh_root):
+    force = Vector(0, 0)
+    other_body = bh_root.body
+    dist_vect  = body.pos - bh_root.com
+    if other_body is body or dist_vect == Vector(0, 0):
+        pass
+    # if the other node is a leaf, calculate the force between the two bodies
+    elif other_body:
+        force += coulomb(dist_vect, 100, body.charge, other_body.charge)
+    # otherwise we'll decide whether or not to approximate
+    else:
+        ratio = bh_root.halfwidth / dist_vect.length()
+        if ratio < .25:
+            force += coulomb(dist_vect, 100, body.charge, bh_root.charge)
+        else:
+            for child in bh_root.nodes.itervalues():
+                force += net_bh_force(body, child)
+    return force
+
+def update_forces_bh(bh_root, allnodes, edges):
+    for node in allnodes:
+        node.force += net_bh_force(node, bh_root)
+    update_hooke_forces(edges)
+
+
 # update the hooke forces between each connected node in a graph
 def update_hooke_forces(edges):
     for edge in edges:
@@ -133,13 +158,6 @@ def update_screen(screen, allnodes, edges, width, height, dt, is_tree=False, roo
     draw_edges(screen, edges)
     draw_nodes(allnodes, screen, 10)
 
-# generate a complete graph of degree n (i.e., a graph in which each
-# node has an edge with each other node)
-def complete_graph(n):
-    nodes = [Node() for x in xrange(0, n)]
-    edges = [(nodes[i], nodes[j]) for i in xrange(0,n) for j in xrange(i + 1, n)]
-    return nodes, edges
-
 # get the edges of a tree from its root
 def get_clicked_node(nodes, mouse_pos):
     for node in nodes:
@@ -151,6 +169,7 @@ def run_simulation(nodes, edges, width, height, dt, is_tree=False, root=None):
     pygame.init()
     screen = pygame.display.set_mode((int(width * 1.4), int(height * 1.4)))
     clicked_node = None
+
     while True:
         mouse_pos = pygame.mouse.get_pos()
         for event in pygame.event.get():
@@ -164,11 +183,13 @@ def run_simulation(nodes, edges, width, height, dt, is_tree=False, root=None):
                 if clicked_node:
                     clicked_node.fixed = False
                     clicked_node = None
+
         if clicked_node:
             clicked_node.fixed = True
             clicked_node.velocity = Vector(0, 0)
             clicked_node.force = Vector(0, 0)
             clicked_node.screen_pos = Vector(mouse_pos[0], mouse_pos[1])
+       
         screen.fill((0,0,0))
         update_screen(screen, nodes, edges, width, height, dt, is_tree, root)
         pygame.display.update()

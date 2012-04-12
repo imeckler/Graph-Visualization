@@ -1,4 +1,3 @@
-from physics import coulomb, hooke
 from unicodedata import normalize
 
 # vector class used for force, position, and velocity. Pretty self explanatory
@@ -78,36 +77,6 @@ class BHTree:
             self.nodes[quadrant].insert(body)
             self.update_charge(body.charge, body.pos.x, body.pos.y)
 
-def net_bh_force(body, bh_root):
-    force = Vector(0, 0)
-    other_body = bh_root.body
-    dist_vect  = body.pos - bh_root.com
-    if other_body is body or dist_vect == Vector(0, 0):
-        pass
-    # if the other node is a leaf, calculate the force between the two bodies
-    elif other_body:
-        force += coulomb(dist_vect, 100, body.charge, other_body.charge)
-    # otherwise we'll decide whether or not to approximate
-    else:
-        ratio = bh_root.halfwidth / dist_vect.length()
-        if ratio < .25:
-            force += coulomb(dist_vect, 100, body.charge, bh_root.charge)
-        else:
-            for child in bh_root.nodes.itervalues():
-                force += net_bh_force(body, child)
-    return force
-
-def update_hooke_forces(edges):
-    for edge in edges:
-        dist_vect = edge[0].pos - edge[1].pos
-        f = hooke(dist_vect, 10, 60)
-        edge[0].force += f
-        edge[1].force -= f
-
-def update_forces_bh(bh_root, allnodes, edges):
-    for node in allnodes:
-        node.force += net_bh_force(node, bh_root)
-    update_hooke_forces(edges)
 
 # simply inserts all the nodes in a nodelist into a BHTree
 def nodes_to_bh_tree(nodes):
@@ -197,3 +166,10 @@ def binary_tree(level):
         res = Node()
         res.children = [binary_tree(level - 1), binary_tree(level - 1)]
         return res
+
+# generate a complete graph of degree n (i.e., a graph in which each
+# node has an edge with each other node)
+def complete_graph(n):
+    nodes = [Node() for x in xrange(0, n)]
+    edges = [(nodes[i], nodes[j]) for i in xrange(0,n) for j in xrange(i + 1, n)]
+    return nodes, edges

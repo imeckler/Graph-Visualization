@@ -75,8 +75,9 @@ def mutual_attendees(event_ids, accesstok):
 
 # scrape the friends-list of the user with the given id number
 def get_friends(id_num, access_token):
-    url = 'https://graph.facebook.com/{0}/friends?access_token={1}'.format(id_num, access_token)
-    return json.load(urllib.urlopen(url))['data']
+    url  = 'https://graph.facebook.com/{0}/friends?access_token={1}'.format(id_num, access_token)
+    page = urllib.urlopen(url)
+    return json.load(page)['data']
 
 # build a dictionary of Node objects from a list of friends for use in a graph
 def friends_to_node_dict(friends):
@@ -94,8 +95,9 @@ def mutual_friend_ids(my_id, friend_id, access_token):
     url     = 'https://graph.facebook.com/{0}/mutualfriends/{1}?access_token={2}'.format(my_id, friend_id, access_token)
     try:
         friends = json.load(urllib.urlopen(url))['data']
-    except KeyError:
-        print "Mutual friend scraping failed for IDs {0} and {1}. Try again.".format(my_id, friend_id)
+    except:
+        print "Mutual friend scraping failed for IDs {0} and {1}. Trying again.".format(my_id, friend_id)
+        return mutual_friend_ids(my_id, friend_id, access_token)
     res = []
     for friend in friends:
         res.append(friend['id'])
