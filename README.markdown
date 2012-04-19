@@ -3,11 +3,6 @@ treeclasses.py
 
 Contains the Vector, BHTree, and Node classes as well as several related functions
 
-physics.py
----
-
-Contains the definition of the Hooke's law and Coulomb's law functions
-
 fdl.py
 ---
 
