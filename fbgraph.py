@@ -67,12 +67,15 @@ class Facebook(object):
 
     # return the friends list of the user as a list of dictionaries
     def get_friends(self):
-        url  = ('https://graph.facebook.com/{0}/friends?access_token={1}'
-                .format(self.id, self.access_token))
-        page = urllib2.urlopen(url)
-        friends = json.load(page)['data']
-        # memoize the result as an attribute
-        self.friends = friends
+        try:
+            friends = self.friends
+        except AttributeError:
+            url  = ('https://graph.facebook.com/{0}/friends?access_token={1}'
+                    .format(self.id, self.access_token))
+            page = urllib2.urlopen(url)
+            friends = json.load(page)['data']
+            # memoize the result as an attribute
+            self.friends = friends
         return friends
 
     # returns a list of the user's mutual friends with the user with
@@ -91,32 +94,27 @@ class Facebook(object):
         return mut_friends
 
     def all_mutual_friend_lists(self):
+        friends = self.get_friends()
         try:
-            friends = self.friends
+            mut_friend_dict = self.mutual_friend_dict
         except AttributeError:
-            friends = self.get_friends()
+            # build a dictionary that maps from a friend's id number to
+            # the url of the list of the user's mutual friends with them
+            url_dict = {}
+            base_url = ('https://graph.facebook.com/{0}/'
+                        'mutualfriends/{1}?access_token={2}')
 
-        # build a dictionary that maps from a friend's id number to
-        # the url of the list of the user's mutual friends with them
-        url_dict = {}
-        for friend in friends:
-            url_dict[friend['id']] = ('https://graph.facebook.com/{0}/'
-                                      'mutualfriends/{1}?access_token={2}'
-                                      .format(self.id, friend['id'], 
-                                              self.access_token))
+            url_dict = {f['id']: base_url.format(self.id, f.id, self.access_token)
+                        for f in friends}
 
-        mut_friend_dict = download_urls(url_dict, 3)
+            mut_friend_dict = download_urls(url_dict, 3)
+            mut_friend_dict = {i: json.loads(page)['data'] 
+                               for i, page in mut_friend_id.iteritems()}
 
-        for k, v in mut_friend_dict.iteritems():
-            try:
-                mut_friend_dict[k] = json.loads(v)['data']
-            except TypeError:
-                pass
+            # memoize the dictionary as an attribute
+            self.mutual_friend_dict = mut_friend_dict
 
-        # memoize the dictionary as an attribute
-        self.mutual_friend_dict = mut_friend_dict
         return mut_friend_dict
-
 
     # generate a list of edges, where each node is a friend of the user,
     # and each edge represents a friendship between two users
@@ -133,18 +131,11 @@ class Facebook(object):
                 res[id_num] = friend_node
             return res
 
-        try:
-            friends = self.friends
-        except AttributeError:
-            friends = self.get_friends()
-
+        friends = self.get_friends()
         friend_nodes = friends_to_node_dict(friends)
         edges = set()
 
-        try:
-            mutual_friend_dict = self.mutual_friend_dict
-        except AttributeError:
-            mutual_friend_dict = self.all_mutual_friend_lists()
+        mutual_friend_dict = self.all_mutual_friend_lists()
 
         for id_num, friend_node in friend_nodes.iteritems():
             mut_friend_id_list = [f['id'] for f in mutual_friend_dict[id_num]]
