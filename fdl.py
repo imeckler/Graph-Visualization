@@ -91,10 +91,11 @@ def update_posns(allnodes, dt):
 
 # update all the velocities of each node in a graph
 def update_velocs(allnodes, dt):
+    friction = .96
     for node in allnodes:
         if not node.fixed:
             node.velocity += node.force * dt
-            node.velocity *= .97
+            node.velocity *= friction
 
 # evolve the state of a graph with time-step dt
 def update_graph(allnodes, edges, dt, is_tree=False, root=None):
