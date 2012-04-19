@@ -4,7 +4,7 @@ usage = 'Enter desired window side-length followed by "bin" (binary tree) or "co
 advice = "Try clicking and dragging the vertices of the graph."
 max_dim = 500
 
-if len(sys.argv) == 1:
+if len(sys.argv) < 3:
 	print usage
 
 # an example for a tree
