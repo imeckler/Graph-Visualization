@@ -1,5 +1,19 @@
 from unicodedata import normalize
 
+# A minimal Node class used in constructing graphs
+class Node(object):
+    def __init__(self, name="", kind="", children=None, parent=None):
+        self.name   = name
+        self.kind   = kind
+        self.parent = parent
+        if children:
+            self.children = children
+        else:
+            self.children = []
+
+    def __repr__(self):
+        return 'Node("{0}", "{1}")'.format(to_ascii(self.name), self.kind)
+
 # vector class used for force, position, and velocity. Pretty self explanatory
 class Vector(object):
     def __init__(self, x, y):
@@ -49,6 +63,7 @@ class BHTree:
         self.com.x = (self.charge * self.com.x + new_charge * new_x)/float(tot_charge)
         self.com.y = (self.charge * self.com.y + new_charge * new_y)/float(tot_charge)
         self.charge = tot_charge
+
     # insert a body into the tree
     def insert(self, body):
         def new_midpt(currpt, new_hwidth, dir_ness):
@@ -61,18 +76,25 @@ class BHTree:
         eastness  = body.pos.x > self.mid_x
         quadrant  = (eastness, northness)
 
+        # if the current node of the tree does not have a body, insert it here
         if self.body:
             old_body  = self.body
             self.body = None
             self.charge = 0
             self.insert(old_body)
             self.insert(body)
+
+        # if there is no node at the quadrant where this body should go,
+        # create a new tree there and place the body in it
         elif quadrant not in self.nodes: 
             new_hwidth = self.halfwidth/2.0
             new_mid_x  = new_midpt(self.mid_x, new_hwidth, eastness)
             new_mid_y  = new_midpt(self.mid_y, new_hwidth, northness)
             self.nodes[quadrant] = BHTree(body, new_mid_x, new_mid_y, new_hwidth)
             self.update_charge(body.charge, body.pos.x, body.pos.y)
+
+        # otherwise recursively insert the body into the proper quadrant's
+        # tree
         else:
             self.nodes[quadrant].insert(body)
             self.update_charge(body.charge, body.pos.x, body.pos.y)
@@ -84,32 +106,6 @@ def nodes_to_bh_tree(nodes):
     for node in nodes[1:]:
         root.insert(node)
     return root
-
-# Node class used in constructing graphs
-class Node(object):
-    def __init__(self, name="", kind="", children=None, parent=None):
-        self.name   = name
-        self.kind   = kind
-        self.parent = parent
-        if children:
-            self.children = children
-        else:
-            self.children = []
-
-    def __repr__(self):
-        return 'Node("{0}", "{1}")'.format(to_ascii(self.name), self.kind)
-
-    def addchild(self, child):
-        self.children.append(child)
-
-    def to_xml(self, level):
-        lev1 = [level * '\t' + "<node>"]
-        lev2 = [(level+1) * '\t' + s for s in ["<name>{0}</name>".format(self.name), 
-                                               "<kind>{0}</kind>".format(self.kind),
-                                               "<children>"]]
-        lev2 += [child.to_xml(level + 2) for child in self.children]
-        lev2.append((level+1) * '\t' + "</children>")
-        return '\n'.join(lev1 + lev2 + [level * '\t' + "</node>"])
 
 # return a tree, trimmed after a certain level
 def pruned(root, level):
