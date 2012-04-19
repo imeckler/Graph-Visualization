@@ -66,7 +66,7 @@ class Facebook(object):
         self.access_token = access_token
 
     # return the friends list of the user as a list of dictionaries
-    def get_friends(self):
+    def update_friends(self):
         url  = ('https://graph.facebook.com/{0}/friends?access_token={1}'
                 .format(self.id, self.access_token))
         page = urllib2.urlopen(url)
@@ -183,16 +183,11 @@ def update_screen_bh(screen, bh_root, allnodes, edges, width, height, dt):
         pygame.draw.circle(screen, (255, 255, 255), (int(node.screen_pos.x), int(node.screen_pos.y)), 3)
 
 
-def run_fb_simulation(width, height, dt, data_path, my_id, access_token, mode, out_directory):
+def run_fb_simulation(facebook, mode, width, height, dt, out_directory):
     try:
-        with open(data_path, 'r') as data_file:
-            try:
-                nodes, edges = cPickle.load(data_file)
-            except:
-                sys.exit("Bad data file")
-    except IOError:
-        print "Data file does not exist\nScraping Facebook..."
-        nodes, edges = friends_graph(my_id, access_token)
+        nodes, edges = facebook.graph
+    except AttributeError:
+        nodes, edges = facebook.friends_graph()
 
     initialize(nodes, width, 100)
     screen = pygame.display.set_mode((int(width * 1.4), int(height * 1.4)))
@@ -221,9 +216,13 @@ def run_fb_simulation(width, height, dt, data_path, my_id, access_token, mode, o
 if __name__ == "main":
     import sys
     try:
+        id_num, access_token, width, height, dt, mode = sys.argv[1:7]
         try:
-            run_fb_simulation(*sys.argv[1:9])
-        except IndexError:
-            run_fb_simulation(*sys.argv[1:8])
+            outpath = sys.argv[7]
+        except ValueError:
+            outpath = None
+
+        facebook = Facebook(id_num, access_token)
+        run_fb_simulation(facebook, mode, width, height, dt, outpath)
     except:
-        print "Usage: [width] [height] [time step] [path to pickle file] [ID number] [access token]  ['save'|'live'] [output path for save mode]"
+        print "Usage: [ID number] [access token] [width] [height] [time step] ['save'|'live'] [output path for save mode]"
