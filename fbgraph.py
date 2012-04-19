@@ -107,7 +107,7 @@ class Facebook(object):
 
         mut_friend_dict = download_urls(url_dict, 3)
 
-        for k, v in mut_friend_dict.iteritems()
+        for k, v in mut_friend_dict.iteritems():
             try:
                 mut_friend_dict[k] = json.loads(v)['data']
             except TypeError:
