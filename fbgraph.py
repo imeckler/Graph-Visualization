@@ -66,7 +66,7 @@ class Facebook(object):
         self.access_token = access_token
 
     # return the friends list of the user as a list of dictionaries
-    def update_friends(self):
+    def get_friends(self):
         url  = ('https://graph.facebook.com/{0}/friends?access_token={1}'
                 .format(self.id, self.access_token))
         page = urllib2.urlopen(url)
